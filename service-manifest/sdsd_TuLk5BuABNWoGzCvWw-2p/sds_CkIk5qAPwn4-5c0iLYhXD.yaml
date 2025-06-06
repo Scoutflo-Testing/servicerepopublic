@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: example-service
+  namespace: default
+  labels:
+    app: example-service
+spec:
+  type: ClusterIP
+  selector:
+    app: example-service
+  ports:
+    - name: https
+      protocol: TCP
+      port: 5678
+      targetPort: 5678
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-service
+  namespace: default
+  labels:
+    app: example-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: example-service
+  template:
+    metadata:
+      labels:
+        app: example-service
+    spec:
+      containers:
+        - name: example-service-container
+          image: satyamp07/n8n:latest
+          ports:
+            - containerPort: 5678
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 250m
+            limits:
+              memory: 1024Mi
+              cpu: 500m
+          env:
+            - name: EXAMPLE_KEY
+              value: value
+      imagePullSecrets:
+        - name: scoutflo-satyam-docker-docker
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-service
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    - host: example-service-ws0z2.scoutflo.agency
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: example-service
+                port:
+                  number: 5678
+  tls:
+    - hosts:
+        - example-service-ws0z2.scoutflo.agency
+      secretName: scoutflo-agency-wildcard-tls
